@@ -1,15 +1,20 @@
 package controllers
 
+import models.Users.loggedinUser
 import play.api._
 import play.api.libs.ws.Response
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
+import play.api.libs.concurrent.Execution.Implicits._
 
 import views._
 import models._
 
+import scala.concurrent
+import scala.concurrent.Future
 import scala.parallel.Future
+import scala.util.{Failure, Success}
 
 object Application extends Controller {
 
@@ -21,6 +26,17 @@ object Application extends Controller {
           println("user=" + name + "password=" + password);
           val userList = Users.authenticate(name, password)
           userList == 1
+//          true
+//          val response: concurrent.Future[Response] = Users.authenticate(name, password)
+//          response.map { resp =>
+//            resp.getAHCResponse.getStatusCode match {
+//              case 200 => true
+//              case _ => false
+//            }
+//
+//          }
+//          if (status.value==200) true else false
+
 
         }
         case _ => false
