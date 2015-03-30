@@ -24,8 +24,11 @@ object Application extends Controller {
       "password" -> text) verifying ("Invalid user or password", result => result match {
         case (name, password) => {
           println("user=" + name + "password=" + password);
-          val userList = Users.authenticate(name, password)
-          userList == 1
+          val statusCode = Users.authenticate(name, password)
+          statusCode match {
+            case 200 => true
+            case _ => false
+          }
 //          true
 //          val response: concurrent.Future[Response] = Users.authenticate(name, password)
 //          response.map { resp =>

@@ -13,12 +13,11 @@ import scala.concurrent.{Await, Future}
 case class User(name: String, password: String)
 
 object Users {
-  def authenticate(name: String, password: String) = {
+  def authenticate(name: String, password: String): Int = {
     val data = Json.obj(
       "name" -> name,
       "password" -> password
     )
-//    val status = 0;
     //needs to be done manually because couchDB only returns cookie on post
     val authResponse: Future[ws.Response] = WS.url("http://127.0.0.1:5984/_session").
       withHeaders("Content-Type" -> "application/json").
@@ -37,14 +36,10 @@ object Users {
 
 
 
-    //TODO here checking if user is authenticated or not; probably from response.status
-//    return status
     val waited = Await.result(authResponse, 5 seconds)
-    val logInName = waited.json.\("name")
-    val status = waited.status
-    1
-//    authResponse
-//    status
+//    val logInName = waited.json.\("name")
+    val status = waited.status //couchDB returns 200 if user is authenticated and 401 if not
+    status
   }
 
 
