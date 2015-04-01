@@ -20,42 +20,12 @@ object Application extends Controller {
 
   lazy val loginForm = Form(
     tuple(
-      "name" -> text,
-      "password" -> text) verifying ("Invalid user or password", result => result match {
-        case (name, password) => {
-          println("user=" + name + "password=" + password);
-          val statusCode = Users.authenticate(name, password)
-          statusCode match {
-            case 200 => true
-            case _ => false
-          }
-//          true
-//          val response: concurrent.Future[Response] = Users.authenticate(name, password)
-//          response.map { resp =>
-//            resp.getAHCResponse.getStatusCode match {
-//              case 200 => true
-//              case _ => false
-//            }
-//
-//          }
-//          if (status.value==200) true else false
+      "name" -> nonEmptyText,
+      "password" -> nonEmptyText))
 
-
-        }
-        case _ => false
-      }))
-
-//  val loginForm = Form(
-//    tuple(
-//      "email" -> text,
-//      "password" -> text
-//    ) verifying ("Invalid email or password", result => result match {
-//      case (email, password) => Users.authenticate(email, password).isDefined
-//    })
-
-    def login = Action { implicit request =>
-      Ok(html.login(loginForm))
-    }
+  def login = Action { implicit request =>
+    Ok(html.login(loginForm))
+  }
 
   /**
    * Handle login form submission.
@@ -63,7 +33,19 @@ object Application extends Controller {
   def authenticate = Action { implicit request =>
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(html.login(formWithErrors)),
-      user => Redirect(routes.WelcomeController.index).withSession("email" -> user._1))
+      user => {
+        val authResponse = Users.authenticate(user._1, user._2)
+        authResponse.statusCode match {
+            // if couchDB returns 200 the user exists and the pw is right
+          case 200 => Redirect(routes.WelcomeController.index).withSession("username" -> user._1, "authCookie" -> authResponse.authCookie)
+            // if the user not exists/pw is wrong couchDB returns 401
+          case _ => {
+            val loginError = loginForm.withGlobalError("Invalid user or password")
+            BadRequest(html.login(loginError))
+          }
+        }
+
+      })
   }
 
   /**
@@ -73,10 +55,6 @@ object Application extends Controller {
     Redirect(routes.Application.login).withNewSession.flashing(
       "success" -> "You've been logged out")
   }
-
-  //def index = Action {
-  //  Ok(views.html.index("Your new application is ready."))
-  //}
 
 }
 
@@ -89,13 +67,16 @@ trait Secured {
   /**
    * Retrieve the connected user id.
    */
-  def username(request: RequestHeader) = request.session.get("email")
+  def username(request: RequestHeader) = request.session.get("username")
 
   /**
    * Redirect to login if the user is not authorized
    */
   private def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Application.login)
 
+  /**
+  * Checks if the username is stored in the session. If yes the request is fulfilled; if not login is shown
+  */
   def IsAuthenticated(f: => String => Request[AnyContent] => Result) =
     Security.Authenticated(username, onUnauthorized) { user =>
       Action(request => f(user)(request))

@@ -13,7 +13,9 @@ import scala.concurrent.{Await, Future}
 case class User(name: String, password: String)
 
 object Users {
-  def authenticate(name: String, password: String): Int = {
+  case class AuthInformation(statusCode: Int, authCookie: String)
+
+  def authenticate(name: String, password: String) = {
     val data = Json.obj(
       "name" -> name,
       "password" -> password
@@ -22,26 +24,28 @@ object Users {
     val authResponse: Future[ws.Response] = WS.url("http://127.0.0.1:5984/_session").
       withHeaders("Content-Type" -> "application/json").
       withHeaders("Accept" -> "application/json").post(data)
-//    val status = authResponse.map { resp =>
-//      val json = resp.json
-//      val name = json.\("name")
-////      val roles = json.\("roles")
-////      val cookie = resp.getAHCResponse.getCookies()
-////      val cookieValue = cookie.get(0).getValue()
-////      println(cookie)
-//      val statusCode = resp.getAHCResponse.getStatusCode()
-////      val login = new loggedinUser(name.toString(), statusCode)
-////          WS.url(url).withAuth(user, password, AuthScheme.BASIC).get()
-//    }
 
-
+    //    val status = authResponse.map { resp =>
+    //      val json = resp.json
+    //      val name = json.\("name")
+    ////      val roles = json.\("roles")
+    ////      val cookie = resp.getAHCResponse.getCookies()
+    ////      val cookieValue = cookie.get(0).getValue()
+    ////      println(cookie)
+    //      val statusCode = resp.getAHCResponse.getStatusCode()
+    ////      val login = new loggedinUser(name.toString(), statusCode)
+    ////          WS.url(url).withAuth(user, password, AuthScheme.BASIC).get()
+    //    }
 
     val waited = Await.result(authResponse, 5 seconds)
-//    val logInName = waited.json.\("name")
+    //    val logInName = waited.json.\("name")
+    val cookie = waited.getAHCResponse.getCookies()
+    val cookieValue = cookie.get(0).getValue()
     val status = waited.status //couchDB returns 200 if user is authenticated and 401 if not
-    status
+
+    AuthInformation(status, cookieValue)
   }
 
 
-  case class loggedinUser(name: String, status: Int)
+
 }
