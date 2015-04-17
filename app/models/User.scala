@@ -49,8 +49,13 @@ object Users {
   }
 
   def checkCookie(authCookie: Option[String]): Boolean = {
-    //TODO[SB] implementation
-    true
+    val authResponse: Future[ws.Response] = WS.url("http://127.0.0.1:5984/_session").
+      withHeaders("Cookie" -> authCookie.get).get()
+    val waited = Await.result(authResponse, 5 seconds)
+    waited.status match {
+      case 200 => return true
+      case _ => return false
+    }
   }
 
 
