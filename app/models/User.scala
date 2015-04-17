@@ -17,6 +17,12 @@ object Users {
 
   case class AuthInformation(statusCode: Int, authCookie: String)
 
+  /**
+   * Authenticates the given username and pwd against couchDB.
+   * @param name the username to authenticate
+   * @param password the pwd to authenticate
+   * @return Object of Authinformation containing the authCookier and statusCode
+   */
   def authenticate(name: String, password: String) = {
     val data = Json.obj(
       "name" -> name,
@@ -48,6 +54,12 @@ object Users {
     AuthInformation(status, cookieValue)
   }
 
+  /**
+   * Checks for legal authCookie in couchDB session.
+   * @param authCookie the authCookie given from the user
+   * @return <code>true</code> if the authCookier is affirmated by couchDB
+   *         <code>false</code> if couchDB tells the cookie is invalid
+   */
   def checkCookie(authCookie: Option[String]): Boolean = {
     val authResponse: Future[ws.Response] = WS.url("http://127.0.0.1:5984/_session").
       withHeaders("Cookie" -> authCookie.get).get()
