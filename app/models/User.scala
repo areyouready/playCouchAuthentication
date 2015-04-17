@@ -5,6 +5,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws
 import play.api.libs.ws.WS
 import play.api.libs.ws.{WS, Response}
+import play.api.mvc.{Result, RequestHeader}
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -13,6 +14,7 @@ import scala.concurrent.{Await, Future}
 case class User(name: String, password: String)
 
 object Users {
+
   case class AuthInformation(statusCode: Int, authCookie: String)
 
   def authenticate(name: String, password: String) = {
@@ -44,6 +46,11 @@ object Users {
     val status = waited.status //couchDB returns 200 if user is authenticated and 401 if not
 
     AuthInformation(status, cookieValue)
+  }
+
+  def checkCookie(authCookie: Option[String]): Boolean = {
+    //TODO[SB] implementation
+    true
   }
 
 

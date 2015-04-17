@@ -1,6 +1,5 @@
 package controllers
 
-import models.Users.loggedinUser
 import play.api._
 import play.api.libs.ws.Response
 import play.api.mvc._
@@ -69,6 +68,8 @@ trait Secured {
    */
   def username(request: RequestHeader) = request.session.get("username")
 
+  def authCookie(request: RequestHeader) = request.session.get("authCookie")
+
   /**
    * Redirect to login if the user is not authorized
    */
@@ -77,8 +78,22 @@ trait Secured {
   /**
   * Checks if the username is stored in the session. If yes the request is fulfilled; if not login is shown
   */
-  def IsAuthenticated(f: => String => Request[AnyContent] => Result) =
+  def isAuthenticated(f: => String => Request[AnyContent] => Result) =
     Security.Authenticated(username, onUnauthorized) { user =>
       Action(request => f(user)(request))
     }
+
+  /**
+   * Checks if the authCookie from the session ist the same as the one stored in the db
+   */
+  def withAuthCookie(f: String => Request[AnyContent] => Result) = isAuthenticated { userCookie => implicit request =>
+    if (Users.checkCookie(authCookie(request) )) {
+      f(username(request).get)(request)
+    } else {
+      onUnauthorized(request)
+    }
+  }
+
+	// when authenticated and making new reuqest couchDB needs to verify that the authCookie is correct
+	// curl -X GET http://127.0.0.1:5984/_session -H 'Cookie: AuthSession=fooBar'
 }

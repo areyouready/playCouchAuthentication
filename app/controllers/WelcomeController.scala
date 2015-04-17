@@ -13,7 +13,7 @@ object WelcomeController extends Controller with Secured {
   /**
    * Secured access to index action
    */
-  def index = IsAuthenticated { username =>
+  def index = withAuthCookie { username =>
     implicit request =>
     Ok(views.html.index("Your new application is ready."))
   }
