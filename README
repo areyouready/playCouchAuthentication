@@ -1,4 +1,4 @@
-This is your new Play application
+PlayCouchAuthentication
 =====================================
 
-This file will be packaged with your application, when using `play dist`.
+Sample application to show how to login from Play 2 (Scala) to a couchDB and authorize requests with the session cookie provided by couchDB
