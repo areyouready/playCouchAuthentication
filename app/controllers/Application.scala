@@ -87,9 +87,9 @@ trait Secured {
    * Checks if the authCookie from the session ist the same as the one stored in the db
    */
   def withAuthCookie(f: String => Request[AnyContent] => Result) = isAuthenticated { userCookie => implicit request =>
-    if (Users.checkCookie(authCookie(request) )) {
+    if (Users.checkCookie(authCookie(request) )) { // when db returns 200 => model returns true
       f(username(request).get)(request)
-    } else {
+    } else { // when db not returns 200 => model returns false
       onUnauthorized(request)
     }
   }

@@ -28,26 +28,15 @@ object Users {
       "name" -> name,
       "password" -> password
     )
+    val url = "http://" + name + ":" + password + "@" + "127.0.0.1:5984/_session";
     //needs to be done manually because couchDB only returns cookie on post
-    val authResponse: Future[ws.Response] = WS.url("http://127.0.0.1:5984/_session").
-      withHeaders("Content-Type" -> "application/json").
-      withHeaders("Accept" -> "application/json").post(data)
-
-    //    val status = authResponse.map { resp =>
-    //      val json = resp.json
-    //      val name = json.\("name")
-    ////      val roles = json.\("roles")
-    ////      val cookie = resp.getAHCResponse.getCookies()
-    ////      val cookieValue = cookie.get(0).getValue()
-    ////      println(cookie)
-    //      val statusCode = resp.getAHCResponse.getStatusCode()
-    ////      val login = new loggedinUser(name.toString(), statusCode)
-    ////          WS.url(url).withAuth(user, password, AuthScheme.BASIC).get()
-    //    }
+    val authResponse: Future[ws.Response] = WS.url(url).withHeaders("Accept" -> "application/json").
+      withAuth(name, password, AuthScheme.BASIC).post(data) //basic login needed when require_valid_user = true in couch config
 
     val waited = Await.result(authResponse, 5 seconds)
-    //    val logInName = waited.json.\("name")
     val cookie = waited.getAHCResponse.getCookies()
+    val body = waited.getAHCResponse.getStatusText()
+    println(cookie)
     val cookieValue = cookie.get(0).getValue()
     val status = waited.status //couchDB returns 200 if user is authenticated and 401 if not
 
@@ -57,13 +46,15 @@ object Users {
   /**
    * Checks for legal authCookie in couchDB session.
    * @param authCookie the authCookie given from the user
-   * @return <code>true</code> if the authCookier is affirmated by couchDB
+   * @return <code>true</code> if the authCookie is affirmated by couchDB
    *         <code>false</code> if couchDB tells the cookie is invalid
    */
   def checkCookie(authCookie: Option[String]): Boolean = {
     val authResponse: Future[ws.Response] = WS.url("http://127.0.0.1:5984/_session").
-      withHeaders("Cookie" -> authCookie.get).get()
+      withHeaders("Cookie" -> ("AuthSession="+authCookie.get)).get()
     val waited = Await.result(authResponse, 5 seconds)
+    println(authCookie.get)
+    println(waited.status)
     waited.status match {
       case 200 => return true
       case _ => return false
